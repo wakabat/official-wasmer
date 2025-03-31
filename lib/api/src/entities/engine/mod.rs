@@ -154,7 +154,7 @@ impl Engine {
         }
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Deserializes a WebAssembly module which was previously serialized with
     /// `Module::serialize`,
     ///
@@ -175,7 +175,7 @@ impl Engine {
         self.be.deserialize_unchecked(bytes)
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Deserializes a WebAssembly module which was previously serialized with
     /// `Module::serialize`,
     ///
@@ -187,7 +187,7 @@ impl Engine {
         self.be.deserialize(bytes)
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Load a serialized WebAssembly module from a file and deserialize it.
     ///
     /// # Note
@@ -207,7 +207,7 @@ impl Engine {
         self.be.deserialize_from_file_unchecked(file_ref)
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Load a serialized WebAssembly module from a file and deserialize it.
     ///
     /// # Errors

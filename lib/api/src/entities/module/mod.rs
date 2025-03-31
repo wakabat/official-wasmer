@@ -319,6 +319,15 @@ impl Module {
         BackendModule::deserialize_from_file_unchecked(engine, path).map(Self)
     }
 
+    /// Deserialize a symbol from current binary into a module.
+    #[cfg(feature = "static-artifact-load")]
+    pub unsafe fn deserialize_object(
+        engine: &impl AsEngineRef,
+        bytes: shared_buffer::OwnedBuffer,
+    ) -> Result<Self, DeserializeError> {
+        BackendModule::deserialize_object(engine, bytes).map(Self)
+    }
+
     /// Returns the name of the current module.
     ///
     /// This name is normally set in the WebAssembly bytecode by some

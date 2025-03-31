@@ -16,7 +16,7 @@ version.workspace = true
 memoffset.workspace = true
 dashmap.workspace = true
 wasmer-types = { path = "../types", version = "=6.0.0-beta.1" }
-libc.workspace = true
+libc = { workspace = true, optional = true }
 indexmap = { workspace = true }
 thiserror = "1.0"
 more-asserts = "0.2"
@@ -25,8 +25,8 @@ backtrace = "0.3"
 serde = { version = "1.0", features = ["derive", "rc"], optional = true }
 enum-iterator = "0.7.0"
 scopeguard = "1.1.0"
-region = { version = "3.0.2" }
-corosensei = { version = "0.2.0" }
+region = { version = "3.0.2", optional = true }
+corosensei = { version = "0.2.0", optional = true }
 fnv = "1.0.3"
 # - Optional shared dependencies.
 tracing = { version = "0.1", optional = true }
@@ -54,9 +54,11 @@ cc = "1.0"
 maintenance = { status = "actively-developed" }
 
 [features]
-default = []
+default = ["os"]
 enable-serde = ["serde", "indexmap/serde", "wasmer-types/enable-serde"]
 artifact-size = ["dep:loupe", "wasmer-types/artifact-size"]
+os = ["libc", "region", "corosensei"]
+baremetal = []
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "docsrs"]

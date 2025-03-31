@@ -5,11 +5,14 @@
 //! of memory.
 
 use more_asserts::assert_le;
+#[cfg(feature = "os")]
 use std::io;
+#[cfg(feature = "os")]
 use std::ptr;
 use std::slice;
 
 /// Round `size` up to the nearest multiple of `page_size`.
+#[cfg(feature = "os")]
 fn round_up_to_page_size(size: usize, page_size: usize) -> usize {
     (size + (page_size - 1)) & !(page_size - 1)
 }
@@ -25,6 +28,7 @@ pub struct Mmap {
     ptr: usize,
     total_size: usize,
     accessible_size: usize,
+    #[cfg(feature = "os")]
     sync_on_drop: bool,
 }
 
@@ -49,10 +53,12 @@ impl Mmap {
             ptr: empty.as_ptr() as usize,
             total_size: 0,
             accessible_size: 0,
+            #[cfg(feature = "os")]
             sync_on_drop: false,
         }
     }
 
+    #[cfg(feature = "os")]
     /// Create a new `Mmap` pointing to at least `size` bytes of page-aligned accessible memory.
     pub fn with_at_least(size: usize) -> Result<Self, String> {
         let page_size = region::page::size();
@@ -60,10 +66,43 @@ impl Mmap {
         Self::accessible_reserved(rounded_size, rounded_size, None, MmapType::Private)
     }
 
+    /// Baremetal mode simply allocates enough bytes from heap.
+    #[cfg(feature = "baremetal")]
+    pub fn accessible_reserved(
+        accessible_size: usize,
+        mapping_size: usize,
+        backing_file: Option<std::path::PathBuf>,
+        _memory_type: MmapType,
+    ) -> Result<Self, String> {
+        let page_size = 4096;
+        assert_le!(accessible_size, mapping_size);
+        assert_eq!(mapping_size & (page_size - 1), 0);
+        assert_eq!(accessible_size & (page_size - 1), 0);
+
+        // Following existing behavior in Linux
+        if mapping_size == 0 {
+            return Ok(Self::new());
+        }
+
+        // Backing file is not supported
+        assert!(backing_file.is_none());
+
+        use std::alloc::{alloc, Layout};
+
+        let layout = Layout::array::<u8>(mapping_size).unwrap();
+        let ptr = unsafe { alloc(layout) } as usize;
+
+        Ok(Self {
+            ptr,
+            total_size: mapping_size,
+            accessible_size,
+        })
+    }
+
     /// Create a new `Mmap` pointing to `accessible_size` bytes of page-aligned accessible memory,
     /// within a reserved mapping of `mapping_size` bytes. `accessible_size` and `mapping_size`
     /// must be native page-size multiples.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(all(feature = "os", not(target_os = "windows")))]
     pub fn accessible_reserved(
         mut accessible_size: usize,
         mapping_size: usize,
@@ -185,7 +224,7 @@ impl Mmap {
     /// Create a new `Mmap` pointing to `accessible_size` bytes of page-aligned accessible memory,
     /// within a reserved mapping of `mapping_size` bytes. `accessible_size` and `mapping_size`
     /// must be native page-size multiples.
-    #[cfg(target_os = "windows")]
+    #[cfg(all(feature = "os", target_os = "windows"))]
     pub fn accessible_reserved(
         accessible_size: usize,
         mapping_size: usize,
@@ -251,10 +290,16 @@ impl Mmap {
         })
     }
 
+    /// For now, make_accessible is no-op in baremetal mode
+    #[cfg(feature = "baremetal")]
+    pub fn make_accessible(&mut self, _start: usize, _len: usize) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
     /// `start` and `len` must be native page-size multiples and describe a range within
     /// `self`'s reserved memory.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(all(feature = "os", not(target_os = "windows")))]
     pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
         let page_size = region::page::size();
         assert_eq!(start & (page_size - 1), 0);
@@ -271,7 +316,7 @@ impl Mmap {
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
     /// `start` and `len` must be native page-size multiples and describe a range within
     /// `self`'s reserved memory.
-    #[cfg(target_os = "windows")]
+    #[cfg(all(feature = "os", target_os = "windows"))]
     pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
         use std::ffi::c_void;
         use windows_sys::Win32::System::Memory::{VirtualAlloc, MEM_COMMIT, PAGE_READWRITE};
@@ -375,7 +420,15 @@ impl Mmap {
 }
 
 impl Drop for Mmap {
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(feature = "baremetal")]
+    fn drop(&mut self) {
+        use std::alloc::{dealloc, Layout};
+
+        let layout = Layout::array::<u8>(self.total_size).unwrap();
+        unsafe { dealloc(self.ptr as *mut u8, layout) }
+    }
+
+    #[cfg(all(feature = "os", not(target_os = "windows")))]
     fn drop(&mut self) {
         if self.total_size != 0 {
             if self.sync_on_drop {
@@ -393,7 +446,7 @@ impl Drop for Mmap {
         }
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(all(feature = "os", target_os = "windows"))]
     fn drop(&mut self) {
         if self.len() != 0 {
             use std::ffi::c_void;
@@ -413,6 +466,7 @@ fn _assert() {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "os")]
     #[test]
     fn test_round_up_to_page_size() {
         assert_eq!(round_up_to_page_size(0, 4096), 0);

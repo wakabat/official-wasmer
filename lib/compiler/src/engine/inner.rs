@@ -1,20 +1,25 @@
 //! Universal compilation.
 
 use crate::engine::builder::EngineBuilder;
+#[cfg(feature = "os")]
 #[cfg(not(target_arch = "wasm32"))]
 use crate::{
     types::{
         function::FunctionBodyLike,
         section::{CustomSectionLike, CustomSectionProtection, SectionIndex},
     },
-    Artifact, BaseTunables, CodeMemory, FunctionExtent, GlobalFrameInfoRegistration, Tunables,
+    CodeMemory, FunctionExtent, GlobalFrameInfoRegistration,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use crate::{Artifact, BaseTunables, Tunables};
 #[cfg(feature = "compiler")]
 use crate::{Compiler, CompilerConfig};
 
+#[cfg(feature = "os")]
 #[cfg(not(target_arch = "wasm32"))]
 use shared_buffer::OwnedBuffer;
 
+#[cfg(feature = "os")]
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
@@ -23,17 +28,19 @@ use std::sync::{Arc, Mutex};
 #[cfg(feature = "compiler")]
 use wasmer_types::Features;
 #[cfg(not(target_arch = "wasm32"))]
+use wasmer_types::FunctionType;
+#[cfg(feature = "os")]
+#[cfg(not(target_arch = "wasm32"))]
 use wasmer_types::{
-    entity::PrimaryMap, DeserializeError, FunctionIndex, FunctionType, LocalFunctionIndex,
-    SignatureIndex,
+    entity::PrimaryMap, DeserializeError, FunctionIndex, LocalFunctionIndex, SignatureIndex,
 };
 use wasmer_types::{target::Target, CompileError, HashAlgorithm};
 
+#[cfg(feature = "os")]
 #[cfg(not(target_arch = "wasm32"))]
-use wasmer_vm::{
-    FunctionBodyPtr, SectionBodyPtr, SignatureRegistry, VMFunctionBody, VMSharedSignatureIndex,
-    VMTrampoline,
-};
+use wasmer_vm::{FunctionBodyPtr, SectionBodyPtr, VMFunctionBody, VMTrampoline};
+#[cfg(not(target_arch = "wasm32"))]
+use wasmer_vm::{SignatureRegistry, VMSharedSignatureIndex};
 
 /// A WebAssembly `Universal` Engine.
 #[derive(Clone)]
@@ -64,6 +71,7 @@ impl Engine {
             inner: Arc::new(Mutex::new(EngineInner {
                 compiler: Some(compiler),
                 features,
+                #[cfg(feature = "os")]
                 #[cfg(not(target_arch = "wasm32"))]
                 code_memory: vec![],
                 #[cfg(not(target_arch = "wasm32"))]
@@ -125,7 +133,7 @@ impl Engine {
                 compiler: None,
                 #[cfg(feature = "compiler")]
                 features: Features::default(),
-                #[cfg(not(target_arch = "wasm32"))]
+                #[cfg(all(feature = "os", not(target_arch = "wasm32")))]
                 code_memory: vec![],
                 #[cfg(not(target_arch = "wasm32"))]
                 signatures: SignatureRegistry::new(),
@@ -199,6 +207,7 @@ impl Engine {
         ))
     }
 
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     /// Deserializes a WebAssembly module which was previously serialized with
     /// [`Module::serialize`].
@@ -219,6 +228,7 @@ impl Engine {
     /// # Safety
     ///
     /// See [`Artifact::deserialize`].
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     pub unsafe fn deserialize(
         &self,
@@ -231,6 +241,7 @@ impl Engine {
     ///
     /// # Safety
     /// See [`Artifact::deserialize`].
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     pub unsafe fn deserialize_from_file(
         &self,
@@ -247,6 +258,7 @@ impl Engine {
     /// # Safety
     ///
     /// See [`Artifact::deserialize_unchecked`].
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     pub unsafe fn deserialize_from_file_unchecked(
         &self,
@@ -305,6 +317,7 @@ pub struct EngineInner {
     features: Features,
     /// The code memory is responsible of publishing the compiled
     /// functions to memory.
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     code_memory: Vec<CodeMemory>,
     /// The signature registry is used mainly to operate with trampolines
@@ -339,6 +352,7 @@ impl EngineInner {
     }
 
     /// Allocate compiled functions into memory
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(clippy::type_complexity)]
     pub(crate) fn allocate<'a, FunctionBody, CustomSection>(
@@ -435,12 +449,14 @@ impl EngineInner {
         ))
     }
 
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     /// Make memory containing compiled code executable.
     pub(crate) fn publish_compiled_code(&mut self) {
         self.code_memory.last_mut().unwrap().publish();
     }
 
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     /// Register DWARF-type exception handling information associated with the code.
     pub(crate) fn publish_eh_frame(&mut self, eh_frame: Option<&[u8]>) -> Result<(), CompileError> {
@@ -455,6 +471,7 @@ impl EngineInner {
         Ok(())
     }
 
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     /// Register macos-specific exception handling information associated with the code.
     pub(crate) fn register_compact_unwind(
@@ -479,6 +496,7 @@ impl EngineInner {
         &self.signatures
     }
 
+    #[cfg(feature = "os")]
     #[cfg(not(target_arch = "wasm32"))]
     /// Register the frame info for the code memory
     pub(crate) fn register_frame_info(&mut self, frame_info: GlobalFrameInfoRegistration) {

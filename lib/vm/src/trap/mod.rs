@@ -6,6 +6,10 @@
 
 #[allow(clippy::module_inception)]
 mod trap;
+#[cfg(feature = "os")]
+mod traphandlers;
+#[cfg(feature = "baremetal")]
+#[path = "traphandlers_baremetal.rs"]
 mod traphandlers;
 
 pub use trap::Trap;

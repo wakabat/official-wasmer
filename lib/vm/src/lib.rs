@@ -14,6 +14,9 @@
 )]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
+#[cfg(all(feature = "os", feature = "baremetal"))]
+compile_error!("You can only pick os or baremetal!");
+
 mod exception_ref;
 mod export;
 mod extern_ref;

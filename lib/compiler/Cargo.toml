@@ -44,8 +44,8 @@ target-lexicon = { workspace = true }
 object = { workspace = true, features = ["write"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-wasmer-vm = { path = "../vm", version = "=6.0.0-beta.1" }
-region = { version = "3.0" }
+wasmer-vm = { path = "../vm", version = "=6.0.0-beta.1", default-features = false }
+region = { version = "3.0", optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.59", features = [
@@ -56,7 +56,9 @@ windows-sys = { version = "0.59", features = [
 macho-unwind-info = "0.5.0"
 
 [features]
-default = ["std"]
+default = ["std", "os"]
+os = ["region", "wasmer-vm/os"]
+baremetal = ["wasmer-vm/baremetal"]
 # This feature is for compiler implementors, it enables using `Compiler` and
 # `CompilerConfig`, as well as the included wasmparser.
 # Disable this feature if you just want a headless engine.

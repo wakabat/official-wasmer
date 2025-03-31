@@ -36,6 +36,9 @@ tokio = { version = "1.39", features = [
 ], optional = true }
 crossbeam-queue = "0.3.8"
 
+[patch.crates-io]
+target-lexicon = { git = "https://github.com/wakabat/target-lexicon", tag = "patch-v0.12.16-1" }
+
 [workspace]
 members = [
 	"fuzz",

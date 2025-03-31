@@ -55,8 +55,8 @@ derive_more = { version = "1.0.0", features = ["from", "debug"] }
 # Dependencies and Development Dependencies for `sys`.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # - Mandatory dependencies for `sys`.
-wasmer-vm = { path = "../vm", version = "=6.0.0-beta.1", optional = true }
-wasmer-compiler = { path = "../compiler", version = "=6.0.0-beta.1", optional = true }
+wasmer-vm = { path = "../vm", version = "=6.0.0-beta.1", default-features = false, optional = true }
+wasmer-compiler = { path = "../compiler", version = "=6.0.0-beta.1", default-features = false, features = ["std"], optional = true }
 wasmer-derive = { path = "../derive", version = "=6.0.0-beta.1" }
 wasmer-types = { path = "../types", version = "=6.0.0-beta.1" }
 target-lexicon = { version = "0.12.2", default-features = false }
@@ -89,7 +89,7 @@ wasmer-types = { path = "../types", version = "=6.0.0-beta.1", default-features 
 wasm-bindgen = "0.2.100"
 js-sys = "0.3.77"
 wasmer-derive = { path = "../derive", version = "=6.0.0-beta.1" }
-wasmer-compiler = { path = "../compiler", version = "=6.0.0-beta.1" }
+wasmer-compiler = { path = "../compiler", default-features = false, features = ["std"], version = "=6.0.0-beta.1" }
 # - Optional dependencies for `js`.
 wasmparser = { workspace = true, default-features = false, optional = true }
 hashbrown = { version = "0.11", optional = true }
@@ -126,7 +126,15 @@ artifact-size = [
 
 # Features for `sys`.
 sys = ["std", "dep:wasmer-vm", "dep:wasmer-compiler"]
-sys-default = ["sys", "wat", "cranelift"]
+sys-os = ["sys", "wasmer-vm/os", "wasmer-compiler/os"]
+sys-default = ["sys-os", "wat", "cranelift"]
+
+sys-baremetal = [
+  "sys",
+  "static-artifact-load",
+  "wasmer-vm/baremetal",
+  "wasmer-compiler/baremetal"
+]
 
 # - Compilers.
 compiler = [

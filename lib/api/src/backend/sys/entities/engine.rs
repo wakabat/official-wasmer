@@ -92,6 +92,7 @@ pub trait NativeEngineExt {
     ///
     /// # Safety
     /// See [`Artifact::deserialize_unchecked`].
+    #[cfg(feature = "sys-os")]
     unsafe fn deserialize_from_mmapped_file_unchecked(
         &self,
         file_ref: &Path,
@@ -101,6 +102,7 @@ pub trait NativeEngineExt {
     ///
     /// # Safety
     /// See [`Artifact::deserialize`].
+    #[cfg(feature = "sys-os")]
     unsafe fn deserialize_from_mmapped_file(
         &self,
         file_ref: &Path,
@@ -148,6 +150,7 @@ impl NativeEngineExt for crate::engine::Engine {
         }
     }
 
+    #[cfg(feature = "sys-os")]
     unsafe fn deserialize_from_mmapped_file_unchecked(
         &self,
         file_ref: &Path,
@@ -163,6 +166,7 @@ impl NativeEngineExt for crate::engine::Engine {
         )))
     }
 
+    #[cfg(feature = "sys-os")]
     unsafe fn deserialize_from_mmapped_file(
         &self,
         file_ref: &Path,

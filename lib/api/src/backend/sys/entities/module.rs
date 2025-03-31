@@ -82,6 +82,7 @@ impl Module {
         self.artifact.serialize().map(|bytes| bytes.into())
     }
 
+    #[cfg(feature = "sys-os")]
     #[tracing::instrument(level = "debug", skip_all)]
     pub(crate) unsafe fn deserialize_unchecked(
         engine: &impl AsEngineRef,
@@ -96,6 +97,7 @@ impl Module {
         Ok(Self::from_artifact(artifact))
     }
 
+    #[cfg(feature = "sys-os")]
     #[tracing::instrument(level = "debug", skip_all)]
     pub(crate) unsafe fn deserialize(
         engine: &impl AsEngineRef,
@@ -110,6 +112,7 @@ impl Module {
         Ok(Self::from_artifact(artifact))
     }
 
+    #[cfg(feature = "sys-os")]
     pub(crate) unsafe fn deserialize_from_file_unchecked(
         engine: &impl AsEngineRef,
         path: impl AsRef<Path>,
@@ -122,6 +125,7 @@ impl Module {
         Ok(Self::from_artifact(artifact))
     }
 
+    #[cfg(feature = "sys-os")]
     pub(crate) unsafe fn deserialize_from_file(
         engine: &impl AsEngineRef,
         path: impl AsRef<Path>,
@@ -132,6 +136,16 @@ impl Module {
             .as_sys()
             .deserialize_from_file(path.as_ref())?;
         Ok(Self::from_artifact(artifact))
+    }
+
+    #[cfg(feature = "static-artifact-load")]
+    pub(crate) unsafe fn deserialize_object(
+        engine: &impl AsEngineRef,
+        bytes: shared_buffer::OwnedBuffer,
+    ) -> Result<Self, DeserializeError> {
+        let artifact =
+            Artifact::deserialize_object(engine.as_engine_ref().engine().as_sys(), bytes)?;
+        Ok(Self::from_artifact(artifact.into()))
     }
 
     pub(super) fn from_artifact(artifact: Arc<Artifact>) -> Self {

@@ -186,10 +186,17 @@ pub trait Tunables {
     /// then the global stack size will be use
     /// Else the defined stack size will be used. Size is in byte
     /// and the value might be rounded to sane value is needed.
+    #[cfg(feature = "os")]
     fn vmconfig(&self) -> &VMConfig {
         &VMConfig {
             wasm_stack_size: None,
         }
+    }
+
+    /// In baremetal mode, VMConfig is simply ().
+    #[cfg(feature = "baremetal")]
+    fn vmconfig(&self) -> &VMConfig {
+        &()
     }
 }
 

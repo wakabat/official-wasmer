@@ -61,6 +61,7 @@ wat = ["wasmer/wat"]
 compiler = [
 	"backend",
 	"wasmer/compiler",
+	"wasmer/sys-os",
 	"wasmer-compiler/translator",
 	"wasmer-compiler/compiler",
 	"sys",
@@ -96,7 +97,7 @@ disable-all-logging = [
 	"wasmer-wasix/disable-all-logging",
 	"log/release_max_level_off",
 ]
-headless = ["dep:wasmer-vm", "wasmer/sys"]
+headless = ["dep:wasmer-vm", "wasmer/sys-os"]
 headless-minimal = ["headless", "disable-all-logging"]
 telemetry = []
 

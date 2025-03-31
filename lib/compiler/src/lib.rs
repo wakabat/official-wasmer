@@ -19,6 +19,7 @@
     clippy::use_self
 )]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(target_os = "zkvm", allow(elided_named_lifetimes))]
 
 #[cfg(all(feature = "std", feature = "core"))]
 compile_error!(
@@ -27,6 +28,9 @@ compile_error!(
 
 #[cfg(all(not(feature = "std"), not(feature = "core")))]
 compile_error!("Both the `std` and `core` features are disabled. Please enable one of them.");
+
+#[cfg(all(feature = "os", feature = "baremetal"))]
+compile_error!("You can only pick os or baremetal!");
 
 #[cfg(feature = "core")]
 extern crate alloc;

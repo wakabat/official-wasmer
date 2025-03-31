@@ -418,7 +418,7 @@
     feature = "jsc",
     feature = "wamr",
     feature = "v8",
-    feature = "wasmi"
+    feature = "wasmi",
 )))]
 compile_error!(
     "One of: `sys`, `js`, `jsc` `wamr`, `wasmi` or `v8` features must be enabled. Please, pick one."
@@ -517,3 +517,12 @@ pub use wasmer_derive::ValueType;
     )
 ))]
 compile_error!("Multiple *-default features selected. Please, pick one only!");
+
+#[cfg(all(
+    feature = "sys",
+    not(any(feature = "sys-os", feature = "sys-baremetal"))
+))]
+compile_error!("You must pick sys-os or sys-baremetal!");
+
+#[cfg(all(feature = "sys-os", feature = "sys-baremetal"))]
+compile_error!("You can only pick sys or sys-baremetal!");

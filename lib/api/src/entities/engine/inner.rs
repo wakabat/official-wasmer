@@ -23,7 +23,7 @@ impl BackendEngine {
         })
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Deserializes a WebAssembly module which was previously serialized with
     /// `Module::serialize`,
     ///
@@ -51,7 +51,7 @@ impl BackendEngine {
         }
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Deserializes a WebAssembly module which was previously serialized with
     /// `Module::serialize`,
     ///
@@ -73,7 +73,7 @@ impl BackendEngine {
         }
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Load a serialized WebAssembly module from a file and deserialize it.
     ///
     /// # Note
@@ -100,7 +100,7 @@ impl BackendEngine {
         }
     }
 
-    #[cfg(all(feature = "sys", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "sys-os", not(target_arch = "wasm32")))]
     /// Load a serialized WebAssembly module from a file and deserialize it.
     ///
     /// # Errors

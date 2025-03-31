@@ -278,7 +278,11 @@ impl BackendModule {
         bytes: impl IntoBytes,
     ) -> Result<Self, DeserializeError> {
         match engine.as_engine_ref().inner.be {
-            #[cfg(feature = "sys")]
+            #[cfg(feature = "sys-baremetal")]
+            crate::BackendEngine::Sys(_) => {
+                panic!("Arbitray deserialization is unspported in baremetal mode!")
+            }
+            #[cfg(feature = "sys-os")]
             crate::BackendEngine::Sys(_) => Ok(Self::Sys(
                 crate::backend::sys::entities::module::Module::deserialize_unchecked(
                     engine, bytes,
@@ -345,7 +349,11 @@ impl BackendModule {
         bytes: impl IntoBytes,
     ) -> Result<Self, DeserializeError> {
         match engine.as_engine_ref().inner.be {
-            #[cfg(feature = "sys")]
+            #[cfg(feature = "sys-baremetal")]
+            crate::BackendEngine::Sys(_) => {
+                panic!("Arbitray deserialization is unspported in baremetal mode!")
+            }
+            #[cfg(feature = "sys-os")]
             crate::BackendEngine::Sys(_) => Ok(Self::Sys(
                 crate::backend::sys::entities::module::Module::deserialize(engine, bytes)?,
             )),
@@ -396,7 +404,11 @@ impl BackendModule {
         path: impl AsRef<Path>,
     ) -> Result<Self, DeserializeError> {
         match engine.as_engine_ref().inner.be {
-            #[cfg(feature = "sys")]
+            #[cfg(feature = "sys-baremetal")]
+            crate::BackendEngine::Sys(_) => {
+                panic!("Arbitray deserialization is unspported in baremetal mode!")
+            }
+            #[cfg(feature = "sys-os")]
             crate::BackendEngine::Sys(_) => Ok(Self::Sys(
                 crate::backend::sys::entities::module::Module::deserialize_from_file(engine, path)?,
             )),
@@ -453,7 +465,11 @@ impl BackendModule {
         path: impl AsRef<Path>,
     ) -> Result<Self, DeserializeError> {
         match engine.as_engine_ref().inner.be {
-            #[cfg(feature = "sys")]
+            #[cfg(feature = "sys-baremetal")]
+            crate::BackendEngine::Sys(_) => {
+                panic!("Arbitray deserialization is unspported in baremetal mode!")
+            }
+            #[cfg(feature = "sys-os")]
             crate::BackendEngine::Sys(_) => Ok(Self::Sys(
                 crate::backend::sys::entities::module::Module::deserialize_from_file_unchecked(
                     engine, path,
@@ -490,6 +506,23 @@ impl BackendModule {
                     engine, path,
                 )?,
             )),
+        }
+    }
+
+    /// Deserialize a symbol from current binary into a module.
+    #[inline]
+    #[cfg(feature = "static-artifact-load")]
+    pub unsafe fn deserialize_object(
+        engine: &impl AsEngineRef,
+        bytes: shared_buffer::OwnedBuffer,
+    ) -> Result<Self, DeserializeError> {
+        match engine.as_engine_ref().inner.be {
+            #[cfg(feature = "sys-baremetal")]
+            crate::BackendEngine::Sys(_) => Ok(Self::Sys(
+                crate::backend::sys::entities::module::Module::deserialize_object(engine, bytes)?,
+            )),
+            #[cfg(not(feature = "sys-baremetal"))]
+            _ => panic!("deserialize_object is only implemented for sys-baremetal feature!"),
         }
     }
 

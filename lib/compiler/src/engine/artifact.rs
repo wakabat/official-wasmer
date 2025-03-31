@@ -8,14 +8,19 @@ use std::sync::{
 
 #[cfg(feature = "compiler")]
 use crate::ModuleEnvironment;
+#[cfg(feature = "os")]
 use crate::{
     engine::link::link_module,
-    lib::std::vec::IntoIter,
-    register_frame_info, resolve_imports,
-    serialize::{MetadataHeader, SerializableModule},
+    register_frame_info,
     types::relocation::{RelocationLike, RelocationTarget},
-    ArtifactBuild, ArtifactBuildFromArchive, ArtifactCreate, Engine, EngineInner, Features,
-    FrameInfosVariant, FunctionExtent, GlobalFrameInfoRegistration, InstantiationError, Tunables,
+    EngineInner, FrameInfosVariant, FunctionExtent, GlobalFrameInfoRegistration,
+};
+use crate::{
+    lib::std::vec::IntoIter,
+    resolve_imports,
+    serialize::{MetadataHeader, SerializableModule},
+    ArtifactBuild, ArtifactBuildFromArchive, ArtifactCreate, Engine, Features, InstantiationError,
+    Tunables,
 };
 #[cfg(any(feature = "static-artifact-create", feature = "static-artifact-load"))]
 use crate::{serialize::SerializableCompilation, types::symbols::ModuleMetadata};
@@ -33,11 +38,13 @@ use crate::object::{
     emit_compilation, emit_data, get_object_for_target, Object, ObjectMetadataBuilder,
 };
 
+#[cfg(feature = "os")]
+use wasmer_types::target::Target;
 #[cfg(feature = "compiler")]
 use wasmer_types::HashAlgorithm;
 use wasmer_types::{
     entity::{BoxedSlice, PrimaryMap},
-    target::{CpuFeature, Target},
+    target::CpuFeature,
     ArchivedDataInitializerLocation, ArchivedOwnedDataInitializer, CompileError, DataInitializer,
     DataInitializerLike, DataInitializerLocation, DataInitializerLocationLike, DeserializeError,
     FunctionIndex, LocalFunctionIndex, MemoryIndex, ModuleInfo, OwnedDataInitializer,
@@ -55,10 +62,12 @@ pub struct AllocatedArtifact {
     // Because the 'GlobalFrameInfoRegistration' ownership can be transfered to EngineInner
     // this bool is needed to track the status, as 'frame_info_registration' will be None
     // after the ownership is transfered.
+    #[cfg(feature = "os")]
     frame_info_registered: bool,
     // frame_info_registered is not staying there but transfered to CodeMemory from EngineInner
     // using 'Artifact::take_frame_info_registration' method
     // so the GloabelFrameInfo and MMap stays in sync and get dropped at the same time
+    #[cfg(feature = "os")]
     frame_info_registration: Option<GlobalFrameInfoRegistration>,
     finished_functions: BoxedSlice<LocalFunctionIndex, FunctionBodyPtr>,
 
@@ -66,6 +75,7 @@ pub struct AllocatedArtifact {
     finished_function_call_trampolines: BoxedSlice<SignatureIndex, VMTrampoline>,
     finished_dynamic_function_trampolines: BoxedSlice<FunctionIndex, FunctionBodyPtr>,
     signatures: BoxedSlice<SignatureIndex, VMSharedSignatureIndex>,
+    #[cfg(feature = "os")]
     finished_function_lengths: BoxedSlice<LocalFunctionIndex, usize>,
 }
 
@@ -204,6 +214,7 @@ impl Artifact {
     /// for the host CPU architecture.
     /// In contrast to [`Self::deserialize_unchecked`] the artifact layout is
     /// validated, which increases safety.
+    #[cfg(feature = "os")]
     pub unsafe fn deserialize(
         engine: &Engine,
         bytes: OwnedBuffer,
@@ -249,6 +260,7 @@ impl Artifact {
     /// See [`Self::deserialize`].
     /// In contrast to the above, this function skips artifact layout validation,
     /// which increases the risk of loading invalid artifacts.
+    #[cfg(feature = "os")]
     pub unsafe fn deserialize_unchecked(
         engine: &Engine,
         bytes: OwnedBuffer,
@@ -287,6 +299,7 @@ impl Artifact {
     }
 
     /// Construct a `ArtifactBuild` from component parts.
+    #[cfg(feature = "os")]
     pub fn from_parts(
         engine_inner: &mut EngineInner,
         artifact: ArtifactBuildVariant,
@@ -704,6 +717,7 @@ impl<'a> DataInitializerLocationLike for DataInitializerLocationVariant<'a> {
 }
 
 impl Artifact {
+    #[cfg(feature = "os")]
     fn internal_register_frame_info(&mut self) -> Result<(), DeserializeError> {
         if self
             .allocated
@@ -758,6 +772,7 @@ impl Artifact {
         Ok(())
     }
 
+    #[cfg(feature = "os")]
     fn internal_take_frame_info_registration(&mut self) -> Option<GlobalFrameInfoRegistration> {
         let frame_info_registration = &mut self
             .allocated
@@ -1258,6 +1273,7 @@ impl Artifact {
             cpu_features: metadata.cpu_features,
         });
 
+        #[cfg(feature = "os")]
         let finished_function_lengths = finished_functions
             .values()
             .map(|_| 0)
@@ -1268,7 +1284,9 @@ impl Artifact {
             id: Default::default(),
             artifact: ArtifactBuildVariant::Plain(artifact),
             allocated: Some(AllocatedArtifact {
+                #[cfg(feature = "os")]
                 frame_info_registered: false,
+                #[cfg(feature = "os")]
                 frame_info_registration: None,
                 finished_functions: finished_functions.into_boxed_slice(),
                 finished_function_call_trampolines: finished_function_call_trampolines
@@ -1276,6 +1294,7 @@ impl Artifact {
                 finished_dynamic_function_trampolines: finished_dynamic_function_trampolines
                     .into_boxed_slice(),
                 signatures: signatures.into_boxed_slice(),
+                #[cfg(feature = "os")]
                 finished_function_lengths,
             }),
         })
