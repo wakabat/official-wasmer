@@ -75,7 +75,7 @@ impl Mmap {
 
         assert!(backing_file.is_none());
 
-        use std::alloc::{alloc, Layout};
+        use std::alloc::{Layout, alloc};
 
         // mmap requires alignment to pages, we follow the same behavior
         let layout = Layout::from_size_align(mapping_size, page_size).unwrap();
@@ -452,7 +452,7 @@ impl Drop for Mmap {
             }
             .expect("restore memory as accessible again");
 
-            use std::alloc::{dealloc, Layout};
+            use std::alloc::{Layout, dealloc};
 
             let layout = Layout::from_size_align(self.total_size, region::page::size()).unwrap();
             unsafe { dealloc(self.ptr as *mut u8, layout) }
