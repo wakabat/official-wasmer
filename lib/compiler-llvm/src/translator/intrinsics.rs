@@ -1249,6 +1249,7 @@ impl<'ctx, 'a> CtxType<'ctx, 'a> {
         cache_builder: &'a Builder<'ctx>,
         abi: &'a dyn Abi,
         config: &'a LLVM,
+        pointer_width: u8,
     ) -> CtxType<'ctx, 'a> {
         CtxType {
             config,
@@ -1265,8 +1266,7 @@ impl<'ctx, 'a> CtxType<'ctx, 'a> {
             cached_functions: HashMap::new(),
             cached_memory_op: HashMap::new(),
 
-            // TODO: pointer width
-            offsets: VMOffsets::new(8, wasm_module),
+            offsets: VMOffsets::new(pointer_width, wasm_module),
         }
     }
 
