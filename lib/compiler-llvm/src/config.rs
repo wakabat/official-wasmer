@@ -244,6 +244,14 @@ impl LLVM {
                 info: true,
                 machine_code: true,
             }),
+            Architecture::Riscv32(_) => InkwellTarget::initialize_riscv(&InitializationConfig {
+                asm_parser: true,
+                asm_printer: true,
+                base: true,
+                disassembler: true,
+                info: true,
+                machine_code: true,
+            }),
             Architecture::LoongArch64 => {
                 InkwellTarget::initialize_loongarch(&InitializationConfig {
                     asm_parser: true,
@@ -275,26 +283,32 @@ impl LLVM {
 
         let target_triple = self.target_triple(target);
         let llvm_target = InkwellTarget::from_triple(&target_triple).unwrap();
-        let mut llvm_target_machine_options = TargetMachineOptions::new()
+        let llvm_target_machine_options = TargetMachineOptions::new()
             .set_cpu(match triple.architecture {
                 Architecture::Riscv64(_) => "generic-rv64",
+                Architecture::Riscv32(_) => "generic-rv32",
                 Architecture::LoongArch64 => "generic-la64",
                 _ => "generic",
             })
             .set_features(match triple.architecture {
-                Architecture::Riscv64(_) => "+m,+a,+c,+d,+f",
+                // Our RISC-V experiment only uses rv[32|64]im. Floating point, compressed
+                // instruction, atomic operations are not supported.
+                Architecture::Riscv64(_) => "+m",
+                Architecture::Riscv32(_) => "+m",
                 Architecture::LoongArch64 => "+f,+d",
                 _ => &llvm_cpu_features,
             })
             .set_level(self.opt_level)
             .set_reloc_mode(self.reloc_mode(self.target_binary_format(target)))
             .set_code_model(match triple.architecture {
-                Architecture::LoongArch64 | Architecture::Riscv64(_) => CodeModel::Medium,
+                Architecture::LoongArch64 | Architecture::Riscv64(_) | Architecture::Riscv32(_) => {
+                    CodeModel::Medium
+                }
                 _ => self.code_model(self.target_binary_format(target)),
             });
-        if let Architecture::Riscv64(_) = triple.architecture {
-            llvm_target_machine_options = llvm_target_machine_options.set_abi("lp64d");
-        }
+        // if let Architecture::Riscv64(_) = triple.architecture {
+        //     llvm_target_machine_options = llvm_target_machine_options.set_abi("lp64d");
+        // }
         llvm_target
             .create_target_machine_from_options(&target_triple, llvm_target_machine_options)
             .unwrap()
