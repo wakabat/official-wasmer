@@ -246,7 +246,7 @@ impl LLVM {
                 // point routine functions and multiplication routine functions. It might
                 // be worthwhile to allow turning them off, and generate references to
                 // proper routine functions.
-                Architecture::Riscv32(_) => "+m,+d,+f",
+                Architecture::Riscv32(_) => "+m",
                 Architecture::LoongArch64 => "+f,+d",
                 _ => &llvm_cpu_features,
             })
