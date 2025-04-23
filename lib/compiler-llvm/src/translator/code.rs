@@ -58,12 +58,14 @@ pub struct FuncTranslator {
     abi: Box<dyn Abi>,
     binary_fmt: BinaryFormat,
     func_section: String,
+    pointer_width: u8,
 }
 
 impl FuncTranslator {
     pub fn new(
         target_machine: TargetMachine,
         binary_fmt: BinaryFormat,
+        pointer_width: u8,
     ) -> Result<Self, CompileError> {
         let abi = get_abi(&target_machine);
         Ok(Self {
@@ -80,6 +82,7 @@ impl FuncTranslator {
                 }
             },
             binary_fmt,
+            pointer_width,
         })
     }
 
@@ -116,8 +119,7 @@ impl FuncTranslator {
             .get(wasm_module.functions[func_index])
             .unwrap();
 
-        // TODO: pointer width
-        let offsets = VMOffsets::new(8, wasm_module);
+        let offsets = VMOffsets::new(self.pointer_width, wasm_module);
         let intrinsics = Intrinsics::declare(&module, &self.ctx, &target_data, &self.binary_fmt);
         let (func_type, func_attrs) =
             self.abi
@@ -238,7 +240,13 @@ impl FuncTranslator {
             state,
             function: func,
             locals: params_locals,
-            ctx: CtxType::new(wasm_module, &func, &cache_builder, &*self.abi),
+            ctx: CtxType::new(
+                wasm_module,
+                &func,
+                &cache_builder,
+                &*self.abi,
+                self.pointer_width,
+            ),
             unreachable_depth: 0,
             memory_styles,
             _table_styles,

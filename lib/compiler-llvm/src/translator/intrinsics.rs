@@ -1232,6 +1232,7 @@ impl<'ctx, 'a> CtxType<'ctx, 'a> {
         func_value: &FunctionValue<'ctx>,
         cache_builder: &'a Builder<'ctx>,
         abi: &'a dyn Abi,
+        pointer_width: u8,
     ) -> CtxType<'ctx, 'a> {
         CtxType {
             ctx_ptr_value: abi.get_vmctx_ptr_param(func_value),
@@ -1248,8 +1249,7 @@ impl<'ctx, 'a> CtxType<'ctx, 'a> {
             cached_memory_grow: HashMap::new(),
             cached_memory_size: HashMap::new(),
 
-            // TODO: pointer width
-            offsets: VMOffsets::new(8, wasm_module),
+            offsets: VMOffsets::new(pointer_width, wasm_module),
         }
     }
 
