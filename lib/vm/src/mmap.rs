@@ -89,7 +89,9 @@ impl Mmap {
 
         use std::alloc::{alloc, Layout};
 
-        let layout = Layout::array::<u8>(mapping_size).unwrap();
+        // mmap requires alignment to pages, we follow the same behavior
+        // by assuming 4K as RISC-V page size.
+        let layout = Layout::from_size_align(mapping_size, 4096).unwrap();
         let ptr = unsafe { alloc(layout) } as usize;
 
         Ok(Self {
