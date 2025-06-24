@@ -48,6 +48,7 @@ cfg_if::cfg_if! {
 
     } else if #[cfg(any(
         all(target_family = "windows", target_env = "gnu"),
+        all(target_vendor = "succinct", target_os = "zkvm"),
         target_family = "unix",
     ))] {
         // gcc-like eh-personality mechanisms.

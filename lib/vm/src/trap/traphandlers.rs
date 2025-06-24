@@ -87,6 +87,9 @@ cfg_if::cfg_if! {
     } else if #[cfg(target_os = "windows")] {
         /// Function which may handle custom signals while processing traps.
         pub type TrapHandlerFn<'a> = dyn Fn(*mut windows_sys::Win32::System::Diagnostics::Debug::EXCEPTION_POINTERS) -> bool + Send + Sync + 'a;
+    } else if #[cfg(all(target_vendor = "succinct", target_os = "zkvm"))] {
+        /// Dummy TrapHandlerFn, SP1 does not have signals
+        pub type TrapHandlerFn<'a> = ();
     }
 }
 
@@ -601,6 +604,9 @@ cfg_if::cfg_if! {
                 }
             };
         }
+    } else if #[cfg(all(target_vendor = "succinct", target_os = "zkvm"))] {
+        // No-op for now, since SP1 does not generate signals
+        unsafe fn platform_init() {}
     }
 }
 
@@ -1135,4 +1141,10 @@ pub fn lazy_per_thread_init() -> Result<(), Trap> {
             }
         }
     }
+}
+
+#[cfg(all(target_vendor = "succinct", target_os = "zkvm"))]
+pub fn lazy_per_thread_init() -> Result<(), Trap> {
+    // No-op for now
+    Ok(())
 }

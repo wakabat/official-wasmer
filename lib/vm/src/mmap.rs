@@ -63,7 +63,10 @@ impl Mmap {
     /// Create a new `Mmap` pointing to `accessible_size` bytes of page-aligned accessible memory,
     /// within a reserved mapping of `mapping_size` bytes. `accessible_size` and `mapping_size`
     /// must be native page-size multiples.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(
+        target_os = "windows",
+        all(target_vendor = "succinct", target_os = "zkvm")
+    )))]
     pub fn accessible_reserved(
         mut accessible_size: usize,
         mapping_size: usize,
@@ -180,6 +183,57 @@ impl Mmap {
 
             result
         })
+    }
+
+    /// For SP1, a combination of heap memory and mprotect is used.
+    #[cfg(all(target_vendor = "succinct", target_os = "zkvm"))]
+    pub fn accessible_reserved(
+        mut accessible_size: usize,
+        mapping_size: usize,
+        backing_file: Option<std::path::PathBuf>,
+        _memory_type: MmapType,
+    ) -> Result<Self, String> {
+        let page_size = region::page::size();
+        assert_le!(accessible_size, mapping_size);
+        assert_eq!(mapping_size & (page_size - 1), 0);
+        assert_eq!(accessible_size & (page_size - 1), 0);
+
+        if mapping_size == 0 {
+            return Ok(Self::new());
+        }
+
+        assert!(backing_file.is_none());
+
+        use std::alloc::{alloc, Layout};
+
+        // mmap requires alignment to pages, we follow the same behavior
+        let layout = Layout::from_size_align(mapping_size, page_size).unwrap();
+        let ptr = unsafe { alloc(layout) } as *const u8;
+
+        if accessible_size < mapping_size {
+            unsafe {
+                region::protect(
+                    ptr.add(accessible_size),
+                    mapping_size - accessible_size,
+                    region::Protection::NONE,
+                )
+            }
+            .map_err(|e| e.to_string())?;
+        }
+
+        let mut result = Self {
+            ptr: ptr as usize,
+            total_size: mapping_size,
+            accessible_size,
+            sync_on_drop: false,
+        };
+
+        if accessible_size != 0 {
+            // Commit the accessible size.
+            result.make_accessible(0, accessible_size)?;
+        }
+
+        Ok(result)
     }
 
     /// Create a new `Mmap` pointing to `accessible_size` bytes of page-aligned accessible memory,
@@ -375,7 +429,10 @@ impl Mmap {
 }
 
 impl Drop for Mmap {
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(
+        target_os = "windows",
+        all(target_vendor = "succinct", target_os = "zkvm")
+    )))]
     fn drop(&mut self) {
         if self.total_size != 0 {
             if self.sync_on_drop {
@@ -391,6 +448,17 @@ impl Drop for Mmap {
             let r = unsafe { libc::munmap(self.ptr as *mut libc::c_void, self.total_size) };
             assert_eq!(r, 0, "munmap failed: {}", io::Error::last_os_error());
         }
+    }
+
+    #[cfg(all(target_vendor = "succinct", target_os = "zkvm"))]
+    fn drop(&mut self) {
+        self.make_accessible(0, self.total_size)
+            .expect("make accessible");
+
+        use std::alloc::{dealloc, Layout};
+
+        let layout = Layout::from_size_align(self.total_size, region::page::size()).unwrap();
+        unsafe { dealloc(self.ptr as *mut u8, layout) }
     }
 
     #[cfg(target_os = "windows")]
