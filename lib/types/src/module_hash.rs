@@ -65,6 +65,7 @@ impl ModuleHash {
     }
 
     /// Generate a random [`ModuleHash`]. For when you don't care about caches.
+    #[cfg(not(target_os = "zkvm"))]
     pub fn random() -> Self {
         let mut bytes = [0_u8; _];
         getrandom::getrandom(&mut bytes).unwrap();
