@@ -6,6 +6,10 @@
 
 #[allow(clippy::module_inception)]
 mod trap;
+#[cfg(not(all(target_vendor = "succinct", target_os = "zkvm")))]
+mod traphandlers;
+#[cfg(all(target_vendor = "succinct", target_os = "zkvm"))]
+#[path = "traphandlers_baremetal.rs"]
 mod traphandlers;
 
 pub use trap::Trap;

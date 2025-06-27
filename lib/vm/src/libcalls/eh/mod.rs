@@ -3,7 +3,11 @@
 mod dwarf;
 
 cfg_if::cfg_if! {
-    if #[cfg(any(target_env = "msvc", target_family = "wasm"))] {
+    if #[cfg(any(
+        target_env = "msvc",
+        target_family = "wasm",
+        all(target_vendor = "succinct", target_os = "zkvm")
+    ))] {
         // We have yet to figure this out.
         #[repr(C)]
         pub struct UwExceptionWrapper {
@@ -37,11 +41,11 @@ cfg_if::cfg_if! {
             panic!()
         }
 
-        pub  fn throw(tag: u64, data_ptr: usize, data_size: u64) -> ! {
+        pub  fn throw(_tag: u64, _data_ptr: usize, _data_size: u64) -> ! {
             panic!()
         }
 
-        pub fn rethrow(exc: *mut UwExceptionWrapper) -> ! {
+        pub fn rethrow(_exc: *mut UwExceptionWrapper) -> ! {
             panic!()
         }
 
