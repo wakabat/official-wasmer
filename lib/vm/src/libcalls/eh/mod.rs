@@ -3,7 +3,11 @@
 mod dwarf;
 
 cfg_if::cfg_if! {
-    if #[cfg(any(target_env = "msvc", target_family = "wasm"))] {
+    if #[cfg(any(
+        target_env = "msvc",
+        target_family = "wasm",
+        target_os = "zkvm"
+    ))] {
         // We have yet to figure this out.
         #[repr(C)]
         pub struct UwExceptionWrapper {
