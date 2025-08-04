@@ -58,6 +58,7 @@ maintenance = { status = "actively-developed" }
 default = []
 enable-serde = ["serde", "indexmap/serde", "wasmer-types/enable-serde"]
 artifact-size = ["dep:loupe", "wasmer-types/artifact-size"]
+force-baremetal = []
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "docsrs"]

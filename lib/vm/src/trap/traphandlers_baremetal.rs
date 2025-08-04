@@ -39,19 +39,58 @@ where
     Ok(closure())
 }
 
-/// In baremetal mode, resuming panic also panics for now.
+/// Unwinding reason
+#[derive(Debug)]
+pub enum UnwindReason {
+    /// A panic caused by the host
+    Panic(Box<dyn Any + Send>),
+    /// A custom error triggered by the user
+    UserTrap(Box<dyn Error + Send + Sync>),
+    /// A Trap triggered by a wasm libcall
+    LibTrap(Trap),
+}
+
+impl UnwindReason {
+    /// Build a Trap from UnwindReason
+    pub fn into_trap(self) -> Trap {
+        match self {
+            Self::UserTrap(data) => Trap::User(data),
+            Self::LibTrap(trap) => trap,
+            Self::Panic(panic) => std::panic::resume_unwind(panic),
+        }
+    }
+}
+
+static mut UNWINDER: Option<Box<dyn Fn(UnwindReason)>> = None;
+
+/// Install a custom unwinder to use
+pub fn install_unwinder(unwinder: Option<Box<dyn Fn(UnwindReason)>>) {
+    unsafe { UNWINDER = unwinder };
+}
+
+unsafe fn unwind_with(reason: UnwindReason) -> ! {
+    println!("Unwinding: {reason:?}");
+    if let Some(unwinder) = unsafe { &*&raw const UNWINDER } {
+        unwinder(reason);
+        unreachable!()
+    } else {
+        panic!("Unwinding: {reason:?}");
+    }
+}
+
+/// Unwind with Rust panic
 pub unsafe fn resume_panic(payload: Box<dyn Any + Send>) -> ! {
-    panic!("Resuming panic: {:?}", payload);
+    unwind_with(UnwindReason::Panic(payload))
 }
 
-/// In baremetal mode, raising user trap simply panics
+/// Raise user trap
 pub unsafe fn raise_user_trap(data: Box<dyn Error + Send + Sync>) -> ! {
-    panic!("User trap: {}", data);
+    unwind_with(UnwindReason::UserTrap(data))
 }
 
-/// In baremetal mode, raising lib trap simply panics
+/// Raise library trap
 pub unsafe fn raise_lib_trap(trap: Trap) -> ! {
-    panic!("Lib trap: {:?}", trap);
+    unwind_with(UnwindReason::LibTrap(trap))
 }
 
 /// When the inner functions have been mocked, wasmer_call_trampoline
