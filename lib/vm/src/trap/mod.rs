@@ -6,9 +6,9 @@
 
 #[allow(clippy::module_inception)]
 mod trap;
-#[cfg(not(target_os = "zkvm"))]
+#[cfg(not(any(target_os = "zkvm", feature = "force-baremetal")))]
 mod traphandlers;
-#[cfg(target_os = "zkvm")]
+#[cfg(any(target_os = "zkvm", feature = "force-baremetal"))]
 #[path = "traphandlers_baremetal.rs"]
 mod traphandlers;
 
@@ -18,4 +18,6 @@ pub use traphandlers::{
     wasmer_call_trampoline, TrapHandlerFn, VMConfig,
 };
 pub use traphandlers::{init_traps, resume_panic};
+#[cfg(any(target_os = "zkvm", feature = "force-baremetal"))]
+pub use traphandlers::{install_unwinder, UnwindReason};
 pub use wasmer_types::TrapCode;
