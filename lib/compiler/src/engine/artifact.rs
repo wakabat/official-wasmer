@@ -719,24 +719,7 @@ impl Artifact {
             return Ok(()); // already done
         }
 
-        let finished_function_extents = self
-            .allocated
-            .as_ref()
-            .expect("It must be allocated")
-            .finished_functions
-            .values()
-            .copied()
-            .zip(
-                self.allocated
-                    .as_ref()
-                    .expect("It must be allocated")
-                    .finished_function_lengths
-                    .values()
-                    .copied(),
-            )
-            .map(|(ptr, length)| FunctionExtent { ptr, length })
-            .collect::<PrimaryMap<LocalFunctionIndex, _>>()
-            .into_boxed_slice();
+        let finished_function_extents = self.finished_function_extents();
 
         let frame_info_registration = &mut self
             .allocated
@@ -781,6 +764,27 @@ impl Artifact {
             .as_ref()
             .expect("It must be allocated")
             .finished_functions
+    }
+
+    /// Returns function extents for external processing, e.g., debugging & profiling
+    pub fn finished_function_extents(&self) -> BoxedSlice<LocalFunctionIndex, FunctionExtent> {
+        self.allocated
+            .as_ref()
+            .expect("It must be allocated")
+            .finished_functions
+            .values()
+            .copied()
+            .zip(
+                self.allocated
+                    .as_ref()
+                    .expect("It must be allocated")
+                    .finished_function_lengths
+                    .values()
+                    .copied(),
+            )
+            .map(|(ptr, length)| FunctionExtent { ptr, length })
+            .collect::<PrimaryMap<LocalFunctionIndex, _>>()
+            .into_boxed_slice()
     }
 
     /// Returns the function call trampolines allocated in memory of this
