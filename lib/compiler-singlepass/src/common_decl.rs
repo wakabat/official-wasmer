@@ -290,6 +290,11 @@ pub(crate) fn save_assembly_to_file(suffix: &str, body: &[u8]) {
     let Ok(dir) = std::env::var("SAVE_DIR") else {
         return;
     };
+    // For some reason, `std::env::var` is returning an empty string here on SP1.
+    // Maybe the Rust toolchain for SP1 has different behavior?
+    if dir.is_empty() {
+        return;
+    }
 
     let base = PathBuf::from(dir);
     create_dir_all(&base).unwrap_or_else(|_| panic!("cannot create dirs: {base:?}"));
