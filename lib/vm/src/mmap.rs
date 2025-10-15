@@ -302,10 +302,28 @@ impl Mmap {
         })
     }
 
+    /// make_accessible for restricted environment
+    #[cfg(target_os = "zkvm")]
+    pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
+        let page_size = region::page::size();
+        assert_eq!(start & (page_size - 1), 0);
+        assert_eq!(len & (page_size - 1), 0);
+        assert_le!(len, self.total_size);
+        assert_le!(start, self.total_size - len);
+
+        unsafe {
+            let ptr_start = (self.ptr as *mut u8).add(start);
+            region::protect(ptr_start, len, region::Protection::READ_WRITE)
+                .map_err(|e| e.to_string())?;
+            ptr::write_bytes(ptr_start, 0, len);
+        }
+        Ok(())
+    }
+
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
     /// `start` and `len` must be native page-size multiples and describe a range within
     /// `self`'s reserved memory.
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(all(not(target_os = "zkvm"), not(target_os = "windows")))]
     pub fn make_accessible(&mut self, start: usize, len: usize) -> Result<(), String> {
         let page_size = region::page::size();
         assert_eq!(start & (page_size - 1), 0);
@@ -429,8 +447,14 @@ impl Drop for Mmap {
     #[cfg(target_os = "zkvm")]
     fn drop(&mut self) {
         if self.total_size != 0 {
-            self.make_accessible(0, self.total_size)
-                .expect("make accessible");
+            unsafe {
+                region::protect(
+                    self.ptr as *const u8,
+                    self.total_size,
+                    region::Protection::READ_WRITE,
+                )
+            }
+            .expect("restore memory as accessible again");
 
             use std::alloc::{dealloc, Layout};
 
