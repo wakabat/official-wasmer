@@ -493,6 +493,23 @@ impl BackendModule {
         }
     }
 
+    /// Deserialize a symbol from current binary into a module.
+    #[inline]
+    #[cfg(feature = "static-artifact-load")]
+    pub unsafe fn deserialize_object(
+        engine: &impl AsEngineRef,
+        bytes: shared_buffer::OwnedBuffer,
+    ) -> Result<Self, DeserializeError> {
+        match engine.as_engine_ref().inner.be {
+            #[cfg(feature = "sys")]
+            crate::BackendEngine::Sys(_) => Ok(Self::Sys(
+                crate::backend::sys::entities::module::Module::deserialize_object(engine, bytes)?,
+            )),
+            #[cfg(not(feature = "sys"))]
+            _ => panic!("deserialize_object is only implemented for sys feature!"),
+        }
+    }
+
     /// Returns the name of the current module.
     ///
     /// This name is normally set in the WebAssembly bytecode by some

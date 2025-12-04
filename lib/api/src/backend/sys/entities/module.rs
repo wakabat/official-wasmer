@@ -134,6 +134,16 @@ impl Module {
         Ok(Self::from_artifact(artifact))
     }
 
+    #[cfg(feature = "static-artifact-load")]
+    pub(crate) unsafe fn deserialize_object(
+        engine: &impl AsEngineRef,
+        bytes: shared_buffer::OwnedBuffer,
+    ) -> Result<Self, DeserializeError> {
+        let artifact =
+            Artifact::deserialize_object(engine.as_engine_ref().engine().as_sys(), bytes)?;
+        Ok(Self::from_artifact(artifact.into()))
+    }
+
     pub(super) fn from_artifact(artifact: Arc<Artifact>) -> Self {
         Self { artifact }
     }
