@@ -110,6 +110,26 @@ impl Store {
         }
     }
 
+    #[cfg(feature = "sys")]
+    #[inline]
+    /// Cleaning current store context, see StoreContext::force_clean
+    /// for details
+    pub fn force_clean(&mut self) {
+        unsafe {
+            StoreContext::force_clean(self.id());
+        }
+    }
+
+    #[cfg(feature = "sys")]
+    #[inline]
+    /// Re-create current store context, see StoreContext::force_create
+    /// for details
+    pub fn force_create(&mut self) {
+        unsafe {
+            StoreContext::force_create(self.as_store_mut().inner as *mut _);
+        }
+    }
+
     /// Returns the [`Engine`].
     pub fn engine(&self) -> &Engine {
         self.inner.store.engine()
