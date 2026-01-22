@@ -183,8 +183,8 @@ impl WasmerCmd {
             // CreateExe and CreateObj commands are temporarily disabled
             // #[cfg(any(feature = "static-artifact-create", feature = "wasmer-artifact-create"))]
             // Some(Cmd::CreateExe(create_exe)) => create_exe.run(),
-            // #[cfg(feature = "static-artifact-create")]
-            // Some(Cmd::CreateObj(create_obj)) => create_obj.execute(),
+            #[cfg(feature = "static-artifact-create")]
+            Some(Cmd::CreateObj(create_obj)) => create_obj.execute(),
             Some(Cmd::Config(config)) => config.run(),
             Some(Cmd::Inspect(inspect)) => inspect.execute(),
             Some(Cmd::Init(init)) => init.run(),
@@ -415,9 +415,9 @@ enum Cmd {
     /// - "aarch64-linux-gnu"
     /// - "x86_64-apple-darwin"
     /// - "arm64-apple-darwin"
-    // #[cfg(feature = "static-artifact-create")]
-    // #[structopt(name = "create-obj", verbatim_doc_comment)]
-    // CreateObj(CreateObj),
+    #[cfg(feature = "static-artifact-create")]
+    #[structopt(name = "create-obj", verbatim_doc_comment)]
+    CreateObj(CreateObj),
 
     ///
     /// Generate the C static_defs.h header file for the input .wasm module
